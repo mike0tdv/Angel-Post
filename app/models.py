@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship, sessionmaker
 from database import Base
 
 
@@ -11,8 +12,12 @@ class Member(Base):
     age = Column(Integer)
     city = Column(String)
     messagesSent = Column(Integer) # Must add calculation of the messages sent
-    groupCode = Column(String)
+    groupName = Column(String)
+    admin_of_group = Column(String)
     password = Column(String)
+    
+    # admin_of_group = relationship("Groups", back_populates="adminID")
+
 
 
 class Groups(Base):
@@ -22,6 +27,10 @@ class Groups(Base):
     name = Column(String)
     member_limit = Column(Integer)
     code = Column(Integer)
+    admin_username = Column(String) # relationship with the Member base
+    places_taken = Column(Integer)
+
+    # adminID = relationship("Member", back_populates="admin_of_group")
 
 
 class Messages(Base):
@@ -31,3 +40,4 @@ class Messages(Base):
     groupID = Column(Integer)
     memberID = Column(Integer)
     text = Column(String)
+
