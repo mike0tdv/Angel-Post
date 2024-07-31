@@ -1,5 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy import Column, Integer, String
 from database import Base
 
 
@@ -15,8 +14,6 @@ class Member(Base):
     groupName = Column(String)
     admin_of_group = Column(String)
     password = Column(String)
-    
-    # admin_of_group = relationship("Groups", back_populates="adminID")
 
 
 
@@ -27,10 +24,8 @@ class Groups(Base):
     name = Column(String)
     member_limit = Column(Integer)
     code = Column(Integer)
-    admin_username = Column(String) # relationship with the Member base
+    admin_username = Column(String)
     places_taken = Column(Integer)
-
-    # adminID = relationship("Member", back_populates="admin_of_group")
 
 
 class Messages(Base):

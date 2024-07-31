@@ -1,12 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
 
-
-class Logged():
-    logged_user: bool = False
-    logged_user_name: str = None
-
-
 class Members(BaseModel):
     name: str
     age: int
@@ -49,15 +43,9 @@ class ShowGroup(BaseModel):
         orm_mode = True
 
 
-class ShowCreatedGroup(BaseModel):
-    name: str
-    member_limit: int
-    places_taken: int
-    admin_username: str
+class ShowCreatedGroup(ShowGroup):
     code: int
-    
-    class Config:
-        orm_mode = True
+
 
 
 class Login(BaseModel):
