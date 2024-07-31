@@ -3,7 +3,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 from typing import Optional, List, Dict
 import schemas, models, database
 from sqlalchemy.orm import Session
-# from routers import auth
+from routers import auth
+
 
 # create an instance of FastAPI()
 app = FastAPI()
@@ -14,31 +15,32 @@ models.Base.metadata.create_all(database.engine)
 get_db = database.get_db
 
 # creating variable that would be used for verification 
-logged_user = schemas.Logged.logged_user
-logged_user_name = schemas.Logged.logged_user_name
+logged_user = auth.logged_user
+logged_user_name = auth.logged_user_name
+# loggedUser = auth.loggedUser
 
 # function responsible for monitoring if the actions are taken by a logged user
-def loggedUser(logged: bool):
-    if logged != logged_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Log in to see this info")
+# def loggedUser(logged: bool):
+#     if logged != logged_user:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Log in to see this info")
 
-# app.include_router(auth.router)
-@app.post("/login", tags=["Authorization"])
-def login(request: OAuth2PasswordRequestForm = Depends(schemas.Login), db: Session = Depends(get_db)):
-    global logged_user, logged_user_name
+app.include_router(auth.router)
+# @app.post("/login", tags=["Authorization"])
+# def login(request: OAuth2PasswordRequestForm = Depends(schemas.Login), db: Session = Depends(get_db)):
+#     global logged_user, logged_user_name
     
-    #checking if the user has entered the right credentials and if has an account in the first place
-    user = db.query(models.Member).filter(models.Member.name==request.username).first()
+#     #checking if the user has entered the right credentials and if has an account in the first place
+#     user = db.query(models.Member).filter(models.Member.name==request.username).first()
     
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid login credentials")
+#     if not user:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid login credentials")
     
-    if not user.password == request.password:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password credentials")
+#     if not user.password == request.password:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password credentials")
 
-    logged_user = True
-    logged_user_name = request.username
-    return {"Data": f"Welcome back {request.username}"}
+#     logged_user = True
+#     logged_user_name = request.username
+#     return {"Data": f"Welcome back {request.username}"}
     
 
 @app.post("/group/join-{group_name}", tags=["Group"])
@@ -101,8 +103,10 @@ def create_members(request: schemas.Members, db: Session = Depends(get_db)):
 
 
 @app.get("/member/about", response_model=schemas.About, tags=["Member"])
-def about_member(*, db: Session = Depends(get_db), login_confirmation: bool):
-    loggedUser(login_confirmation)
+def about_member(*, db: Session = Depends(get_db), logged: bool):
+    global logged_user
+    if logged is not logged_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Log in to see this info")
 
     data = db.query(models.Member).filter(models.Member.name == logged_user_name).first()
     return data
