@@ -1,34 +1,33 @@
 from fastapi import FastAPI, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from typing import Optional, List
+from typing import Optional, List, Dict
 import schemas, models, database
 from sqlalchemy.orm import Session
-# from routers import members, groups, auth
-# from repos import check_login
+# from routers import auth
 
+# create an instance of FastAPI()
 app = FastAPI()
 
+# creating the connection to the db and the instance
 models.Base.metadata.create_all(database.engine)
 
 get_db = database.get_db
 
-# logged_user = schemas.Logged.logged_user
-# logged_user_name = schemas.Logged.logged_user_name
-# checkLogin = check_login.loggedUser
+# creating variable that would be used for verification 
+logged_user = schemas.Logged.logged_user
+logged_user_name = schemas.Logged.logged_user_name
 
-# def memberCount(groupName)
-
-logged_user: bool = False
-logged_user_name: str = None
-
+# function responsible for monitoring if the actions are taken by a logged user
 def loggedUser(logged: bool):
     if logged != logged_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Log in to see this info")
 
-@app.post("/login")
+# app.include_router(auth.router)
+@app.post("/login", tags=["Authorization"])
 def login(request: OAuth2PasswordRequestForm = Depends(schemas.Login), db: Session = Depends(get_db)):
     global logged_user, logged_user_name
     
+    #checking if the user has entered the right credentials and if has an account in the first place
     user = db.query(models.Member).filter(models.Member.name==request.username).first()
     
     if not user:
@@ -42,13 +41,19 @@ def login(request: OAuth2PasswordRequestForm = Depends(schemas.Login), db: Sessi
     return {"Data": f"Welcome back {request.username}"}
     
 
-
-# app.include_router(members.router)
-@app.post("/group/join-{group_name}")
+@app.post("/group/join-{group_name}", tags=["Group"])
 def join_group(*, db: Session = Depends(get_db), group_name: str, logged: bool, group_code: int):
     loggedUser(logged)
 
+    # creating instances of the user and his old group(if he had one)
+    user = db.query(models.Member).filter(models.Member.name == logged_user_name).first()
+    old_group_name = user.groupName
+    old_group = db.query(models.Groups).filter(models.Groups.name == old_group_name).first()
     data = db.query(models.Groups).filter(models.Groups.name == group_name).first()
+    
+    if old_group_name == group_name:
+        raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="You are already a member of this group!")
+
     if not data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No group with the given name has been found")
 
@@ -58,16 +63,18 @@ def join_group(*, db: Session = Depends(get_db), group_name: str, logged: bool, 
     if group_code != data.code:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid group code")
     
-    user = db.query(models.Member).filter(models.Member.name == logged_user_name).first()
+    if old_group:
+        old_group.places_taken -= 1
+
     user.groupName = group_name
-    data.places_taken = data.places_taken + 1
+    data.places_taken += 1
     db.flush()
     db.commit()
-    return {"Data": f"You joined {group_name} successfully"} 
+    return {"Data": f"You joined '{group_name}' successfully"} 
 
 
 
-@app.get("/group/{group_name}/show-members", response_model=List[schemas.ShowMember])
+@app.get("/group/{group_name}/show-members", response_model=List[schemas.ShowMember], tags=["Group"])
 def show_members(*, db: Session = Depends(get_db), group_name: str, logged: bool):
     loggedUser(logged)
     
@@ -75,7 +82,7 @@ def show_members(*, db: Session = Depends(get_db), group_name: str, logged: bool
     return data
 
 
-@app.post("/members/sign-in")
+@app.post("/members/sign-in", response_model=schemas.Members, tags=["Member"])
 def create_members(request: schemas.Members, db: Session = Depends(get_db)):
     global logged_user, logged_user_name
 
@@ -93,29 +100,30 @@ def create_members(request: schemas.Members, db: Session = Depends(get_db)):
 
 
 
-@app.get("/member/about", response_model=schemas.About)
+@app.get("/member/about", response_model=schemas.About, tags=["Member"])
 def about_member(*, db: Session = Depends(get_db), login_confirmation: bool):
     loggedUser(login_confirmation)
+
     data = db.query(models.Member).filter(models.Member.name == logged_user_name).first()
     return data
 
 
 
-@app.get("/member/messages-sent")
+@app.get("/member/messages-sent", tags=["Member"])
 def show_messagesSent(login_confirmation: bool, limit: int = 10):
     loggedUser(login_confirmation)      
     return {"Data":f"Last {limit} Messages Sent"}
 
 
 
-@app.get("/group", response_model=List[schemas.ShowGroup])
+@app.get("/group", response_model=List[schemas.ShowGroup], tags=["Group"])
 def show_groups(db: Session = Depends(get_db), limit: int = 10):
     data = db.query(models.Groups).limit(limit).all()
     return data
 
 
 
-@app.post("/group/create")
+@app.post("/group/create", response_model=schemas.ShowCreatedGroup, tags=["Group"])
 def group_creation(*, request: schemas.Group, db: Session = Depends(get_db), logged: bool):
     loggedUser(logged)
     used_name = admin = db.query(models.Groups).filter(models.Groups.name == request.name).first()

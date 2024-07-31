@@ -2,9 +2,9 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-# class Logged():
-#     logged_user: bool = False
-#     logged_user_name: str = None
+class Logged():
+    logged_user: bool = False
+    logged_user_name: str = None
 
 
 class Members(BaseModel):
@@ -29,7 +29,7 @@ class About(BaseModel):
     name: str
     age: int
     city: str
-    groupName: str
+    groupName: Optional[str] = None
     messagesSent: Optional[int] = None # Must add calculation of the messages sent
     admin_of_group: Optional[str] = None
     
@@ -42,7 +42,19 @@ class Group(BaseModel):
 class ShowGroup(BaseModel):
     name: str
     member_limit: int
+    places_taken: int
     admin_username: str
+    
+    class Config:
+        orm_mode = True
+
+
+class ShowCreatedGroup(BaseModel):
+    name: str
+    member_limit: int
+    places_taken: int
+    admin_username: str
+    code: int
     
     class Config:
         orm_mode = True
