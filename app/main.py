@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 import models, database
-from routers import member, groups, auth
+from routers import member, groups, auth, admin
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -17,4 +17,5 @@ get_db = database.get_db
 
 app.include_router(auth.router)
 app.include_router(member.router)
+app.include_router(admin.router)
 app.include_router(groups.router)
