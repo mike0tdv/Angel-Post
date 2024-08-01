@@ -45,10 +45,31 @@ def group_creation(*, request: schemas.Group, db: Session = Depends(get_db)):
 
 
 @router.put("/change-admin")
-def change_admin(password: int, new_admin: str, db: Session = Depends(get_db)):
+def change_admin(password: str, new_admin: str, group_name: str, db: Session = Depends(get_db)):
     loggedUser()
 
-    return {"Data": "The admin of the group {group_name} has been successfully changed to {new_admin}"}
+    group = db.query(models.Groups).filter(models.Groups.name == group_name).first()
+    member = db.query(models.Member).filter(models.Member.name == logged1.logged_user_name).first()
+    admin_new = db.query(models.Member).filter(models.Member.name == new_admin).first()
+    
+    
+    if member.password != password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Wrong admin credential")
+    if group.admin_username != member.name:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not the admin of this group")
+    if not admin_new:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No member with the given name has been found")
+    if admin_new.groupName != group.name:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{new_admin} is not a member of this group")
+    if admin_new.admin_of_group != None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The user is already an admin of another group")
+    
+    member.admin_of_group = None
+    admin_new.admin_of_group = group_name
+    group.admin_username = new_admin
+    db.flush()
+    db.commit()
+    return {"Data": f"The admin of the group {group_name} has been successfully changed to {new_admin}"}
 
 
 @router.delete("/delete-group")
@@ -57,11 +78,11 @@ def delete_group(password: str, group_name: str,  db: Session = Depends(get_db))
 
     admin = db.query(models.Member).filter(models.Member.admin_of_group == group_name).first()
 
-    if not admin or admin.name != logged1.logged_user_name:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not the admin of the group")
-    
     if admin.password != password:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Wrong admin credential")
+    
+    if not admin or admin.name != logged1.logged_user_name:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not the admin of the group")
     
     group = db.query(models.Groups).filter(models.Groups.name == admin.admin_of_group).first()
 
