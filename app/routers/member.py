@@ -16,7 +16,7 @@ def create_members(request: schemas.Members, db: Session = Depends(get_db)):
     data = db.query(models.Member).filter(models.Member.name == request.name).first()
     if data:
         raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="This username is already in use")
-    new_member = models.Member(name=request.name, age=request.age, city=request.city, password=request.password)
+    new_member = models.Member(name=request.name, age=request.age, city=request.city, password=request.password, messagesSent = 0)
     db.add(new_member)
     db.flush()
     db.commit()
@@ -25,7 +25,7 @@ def create_members(request: schemas.Members, db: Session = Depends(get_db)):
     logged1.logged_user_name = request.name
     return new_member
 
-@router.get("/member/about", response_model=schemas.About, tags=["Member"])
+@router.get("/about", response_model=schemas.About)
 def about_member(*, db: Session = Depends(get_db), login_confirmation: bool):
     if login_confirmation != logged1.logged_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Log in to see this info")
@@ -34,7 +34,7 @@ def about_member(*, db: Session = Depends(get_db), login_confirmation: bool):
     return data
 
 
-@router.get("/member/messages-sent", tags=["Member"])
+@router.get("/messages-sent")
 def show_messagesSent(login_confirmation: bool, limit: int = 10):
     if login_confirmation != logged1.logged_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Log in to see this info")      

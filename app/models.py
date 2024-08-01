@@ -32,7 +32,8 @@ class Messages(Base):
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True, index=True)
-    groupID = Column(Integer)
-    memberID = Column(Integer)
+    groupName = Column(String)
+    memberName = Column(String)
+    receiverName = Column(String)
     text = Column(String)
 
