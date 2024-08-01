@@ -2,7 +2,7 @@ from fastapi import HTTPException, status, Depends, APIRouter
 from typing import List
 import schemas, models, database
 from sqlalchemy.orm import Session
-from repos import logged1
+from repos import logged1, auth
 
 router = APIRouter(
     prefix="/admin",
@@ -12,20 +12,19 @@ router = APIRouter(
 get_db = database.get_db
 
 
-def loggedUser():
-    if logged1.logged_user == False:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Log in to see this info")
-
-
-
 @router.post("/create-group", response_model=schemas.ShowCreatedGroup)
 def group_creation(*, request: schemas.Group, db: Session = Depends(get_db)):
-    loggedUser()
+    auth.loggedUser()
     
+    admin = db.query(models.Member).filter(models.Member.name == logged1.logged_user_name).first()
     used_name = db.query(models.Groups).filter(models.Groups.name == request.name).first()
+    
     if used_name:
         raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="This group name is already in use")
-     
+    if admin.admin_of_group != None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You are already an admin of a group. Change the admin first")
+
+
     new_group = models.Groups(name=request.name, member_limit=request.member_limit, code=request.code, admin_username=logged1.logged_user_name, places_taken = 1)
     
     user = db.query(models.Member).filter(models.Member.name == logged1.logged_user_name).first()
@@ -46,7 +45,7 @@ def group_creation(*, request: schemas.Group, db: Session = Depends(get_db)):
 
 @router.put("/change-admin")
 def change_admin(password: str, new_admin: str, group_name: str, db: Session = Depends(get_db)):
-    loggedUser()
+    auth.loggedUser()
 
     group = db.query(models.Groups).filter(models.Groups.name == group_name).first()
     member = db.query(models.Member).filter(models.Member.name == logged1.logged_user_name).first()
@@ -74,7 +73,7 @@ def change_admin(password: str, new_admin: str, group_name: str, db: Session = D
 
 @router.delete("/delete-group")
 def delete_group(password: str, group_name: str,  db: Session = Depends(get_db)):
-    loggedUser()
+    auth.loggedUser()
 
     admin = db.query(models.Member).filter(models.Member.admin_of_group == group_name).first()
 

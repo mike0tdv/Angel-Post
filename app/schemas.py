@@ -9,7 +9,7 @@ class Members(BaseModel):
 
 class ShowMember(BaseModel):
     name: str
-    messagesSent: Optional[int] = None # Must add calculation of the messages sent
+    messagesSent: Optional[int] = None
 
     class Config:
         orm_mode = True
@@ -20,7 +20,7 @@ class About(BaseModel):
     age: int
     city: str
     groupName: Optional[str] = None
-    messagesSent: Optional[int] = None # Must add calculation of the messages sent
+    messagesSent: Optional[int] = None
     admin_of_group: Optional[str] = None
     
 

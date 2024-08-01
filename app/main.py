@@ -1,10 +1,6 @@
 from fastapi import FastAPI
 import models, database
 from routers import member, groups, auth, admin
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # create an instance of FastAPI()
 app = FastAPI()

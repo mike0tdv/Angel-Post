@@ -2,7 +2,7 @@ from fastapi import HTTPException, status, Depends, APIRouter
 from typing import List
 import schemas, models, database
 from sqlalchemy.orm import Session
-from repos import logged1
+from repos import logged1, auth
 
 router = APIRouter(
     prefix="/group",
@@ -10,12 +10,6 @@ router = APIRouter(
 )
 
 get_db = database.get_db
-
-
-def loggedUser():
-    if logged1.logged_user == False:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Log in to see this info")
-
 
 
 @router.get("/", response_model=List[schemas.ShowGroup])
@@ -26,7 +20,7 @@ def show_groups(db: Session = Depends(get_db), limit: int = 10):
 
 @router.post("/{group_name}/sent-message")
 def sent_message(group_name: str, receiver: str, message: str, db: Session = Depends(get_db)):
-    loggedUser()
+    auth.loggedUser()
 
     group = db.query(models.Groups).filter(models.Groups.name == group_name).first()
     message_receiver = db.query(models.Member).filter(models.Member.name == receiver).first()
@@ -48,7 +42,7 @@ def sent_message(group_name: str, receiver: str, message: str, db: Session = Dep
 
 @router.get("/{group_name}/show-members", response_model=List[schemas.ShowMember])
 def show_members(*, db: Session = Depends(get_db), group_name: str):
-    loggedUser()
+    auth.loggedUser()
     
     data = db.query(models.Member).filter(models.Member.groupName == group_name).all()
     return data
@@ -56,7 +50,7 @@ def show_members(*, db: Session = Depends(get_db), group_name: str):
 
 @router.post("/group/join-{group_name}")
 def join_group(*, db: Session = Depends(get_db), group_name: str, group_code: int):
-    loggedUser()
+    auth.loggedUser()
 
     # creating instances of the user and his old group(if he had one)
     user = db.query(models.Member).filter(models.Member.name == logged1.logged_user_name).first()
@@ -88,7 +82,7 @@ def join_group(*, db: Session = Depends(get_db), group_name: str, group_code: in
 
 @router.put("/{group_name}/leave")
 def leave_group(group_name: str, db: Session = Depends(get_db)):
-    loggedUser()
+    auth.loggedUser()
 
     member = db.query(models.Member).filter(models.Member.name == logged1.logged_user_name).first()
     if member.groupName != group_name:
