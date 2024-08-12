@@ -39,3 +39,9 @@ def signIn(db: Session, request: schemas.Members):
     logged1.logged_user = True
     logged1.logged_user_name = request.name
     return new_member
+
+
+def signOut():
+    logged1.logged_user = False
+    logged1.logged_user_name = None
+    return {"Data": "Successfully logged out!"}

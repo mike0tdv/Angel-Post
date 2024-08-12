@@ -65,15 +65,23 @@ def admin_change(db: Session, password: str, new_admin: str, group_name: str):
 
 def delete(db: Session, password: str, group_name: str):
     
+    
+    group = db.query(models.Groups).filter(models.Groups.name == group_name).first()
+    if not group:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No group with the given name has been found")
+    
+    
     admin = db.query(models.Member).filter(models.Member.admin_of_group == group_name).first()
+    if not admin:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not the admin of the group")
 
     if admin.password != password:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Wrong admin credential")
     
-    if not admin or admin.name != logged1.logged_user_name:
+    if admin.name != logged1.logged_user_name:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not the admin of the group")
     
-    group = db.query(models.Groups).filter(models.Groups.name == admin.admin_of_group).first()
+    
 
     members = db.query(models.Member).all()
     

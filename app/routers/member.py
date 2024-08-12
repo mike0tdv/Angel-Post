@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, status, Depends, APIRouter
 import schemas, models, database
 from sqlalchemy.orm import Session
 from repos import logged1, auth, member
+from typing import List
 
 router = APIRouter(
     prefix="/members",
@@ -17,10 +18,10 @@ def about_member(db: Session = Depends(get_db)):
     return member.about(db)
     
 
-@router.get("/messages-sent")
-def show_messagesSent(limit: int = 10):
+@router.get("/messages-sent", response_model=List[schemas.ShowMessage])
+def show_messagesSent(db: Session = Depends(get_db)):
     auth.loggedUser()      
-    return {"Data":f"Last {limit} Messages Sent"}
+    return member.messages_show(db)
 
 
 @router.delete("/delete-account")

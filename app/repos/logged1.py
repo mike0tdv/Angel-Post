@@ -3,5 +3,5 @@ import main
 
 router = APIRouter()
 
-logged_user: bool = None
+logged_user: bool = False
 logged_user_name: str = None

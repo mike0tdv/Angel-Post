@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from typing import Optional
 
+
+
 class Members(BaseModel):
     name: str
     age: int
@@ -47,3 +49,13 @@ class Login(BaseModel):
     username: str
     password: str
 
+
+
+class ShowMessage(BaseModel):
+    memberName: str
+    receiverName: str
+    groupName: str
+    text: str
+
+    class Config:
+        orm_mode = True

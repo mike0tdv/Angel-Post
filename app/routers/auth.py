@@ -18,3 +18,9 @@ def login(request: OAuth2PasswordRequestForm = Depends(schemas.Login), db: Sessi
 @router.post("/sign-in", response_model=schemas.Members)
 def create_members(request: schemas.Members, db: Session = Depends(get_db)):
     return auth.signIn(db, request)
+
+
+@router.post("/sign-out")
+def sign_out(db: Session = Depends(get_db)):
+    auth.loggedUser()
+    return auth.signOut()    

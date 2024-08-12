@@ -11,6 +11,12 @@ def about(db: Session):
     return data
 
 
+def messages_show(db: Session):
+    messages = db.query(models.Messages).filter(models.Messages.memberName == logged1.logged_user_name).all()
+    return messages
+
+
+
 def delete(db: Session, password: str):
     member = db.query(models.Member).filter(models.Member.name == logged1.logged_user_name).first()
     group = db.query(models.Groups).filter(models.Groups.name == member.groupName).first()
